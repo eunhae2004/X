@@ -62,3 +62,13 @@ export async function login(userid, password) {
   );
   return user;
 }
+
+// 아이디 찾기
+export async function findByUserid(userid) {
+  const user = users.find((user) => user.userid === userid);
+  return user;
+}
+
+export async function findByid(id) {
+  return users.find((user) => user.id === id);
+}

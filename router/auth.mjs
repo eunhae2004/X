@@ -2,50 +2,38 @@
 
 import express from "express";
 import * as authController from "../controller/auth.mjs";
+import { body } from "express-validator";
+import { validate } from "../middlewear/validator.mjs";
 
-const session = require("express-session");
 const router = express.Router();
 
+const validateLogin = [
+  body("userid")
+    .trim()
+    .isLength({ min: 4 })
+    .withMessage("최소 4자이상 입력")
+    .matches(/^[a-zA-Z0-9]*$/)
+    .withMessage("특수문자는 사용불가"),
+  body("password").trim().isLength({ min: 8 }).withMessage("최소 8자이상 입력"),
+  validate,
+];
+
+const validateSignup = [
+  ...validateLogin,
+  body("name").trim().notEmpty().withMessage("name을 입력"),
+  body("email").trim().isEmail().withMessage("이메일 형식 확인"),
+  validate,
+];
+
 // 회원가입
-// http://127.0.0.1:8000/auth/signup
-router.post("/signup", authController.signup);
+// POST
+// http://127.0.0.1:8080/auth/signup
+router.post("/signup", validateSignup, authController.signup);
 
 // 로그인
-// http://127.0.0.1:8000/auth/login
-router.post("/login", authController.login);
+// POST
+// http://127.0.0.1:8080/auth/login
+router.post("/login", validateLogin, authController.login);
 
 // 로그인 유지
-router.use(
-  session({
-    secret: "!@#$%^&*()",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false },
-  })
-);
-
-router.post("/login", (req, res) => {
-  const { userid, password } = req.body;
-  req.session.user = { userid };
-  res.send(`로그인 성공: ${userid}`);
-});
-
-router.get("/me", (req, res) => {
-  if (req.session.user) {
-    res.json(req.session.user); //session에 user가 있다면
-  } else {
-    res.status(401).send("로그인이 필요합니다.");
-  }
-});
-
-router.get("/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.send("로그아웃 되었습니다.");
-  });
-});
-
-router.listen(3000, () => {
-  console.log("서버 실행 중");
-});
-
 export default router;
